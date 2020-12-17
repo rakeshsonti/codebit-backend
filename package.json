@@ -1,0 +1,25 @@
+{
+  "name": "codebit-backend",
+  "version": "1.0.0",
+  "description": "backend project for codebit websites",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rambhajansonti/codebit-backend.git"
+  },
+  "author": "ramsonti",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rambhajansonti/codebit-backend/issues"
+  },
+  "homepage": "https://github.com/rambhajansonti/codebit-backend#readme",
+  "dependencies": {
+    "compile-run": "^2.3.4",
+    "express": "^4.17.1",
+    "nodemon": "^2.0.6"
+  }
+}
