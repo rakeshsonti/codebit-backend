@@ -7,12 +7,11 @@ const userSchema = new mongoose.Schema({
 });
 const userCodeSchema = new mongoose.Schema({
    sourceCode: String,
-   codeValue: Number,
+   creditPoint: Number,
    creationTime: Date,
-   codeLevel: String,
-   problemCode:String,
-   identity:String,
-   username:String,
+   level: String,
+   uniqueCode: String,
+   username: String,
    userId: mongoose.Schema.Types.ObjectId,
 });
 module.exports = { userCodeSchema, userSchema };
