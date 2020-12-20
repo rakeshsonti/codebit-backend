@@ -164,6 +164,82 @@ app.post("/upateUserCode", AuthMiddleware, SaveMiddleware, async (req, res) => {
       res.status(401).send("problem does not exist");
    }
 });
+//run code of the user
+//before use change sourcecode to sourceCode
+const sourcecode = `console.log('Hello World');`;
+app.post("/run", AuthMiddleware, async (req, res) => {
+   const { java, python, node, c, cpp } = require("compile-run");
+   const codeBody = req.body;
+   const { sourceCode, language, input } = codeBody;
+   switch (language) {
+      case "c":
+         console.log("c");
+         let resultPromiseC = c.runSource(sourcecode, { stdin: input });
+         resultPromiseC
+            .then((result) => {
+               console.log(result);
+               res.status(200).send(result);
+            })
+            .catch((err) => {
+               res.status(400).send(err);
+            });
+         break;
+      case "cpp":
+         console.log("cpp");
+         let resultPromiseCpp = cpp.runSource(sourceCode, { stdin: input });
+         resultPromiseCpp
+            .then((result) => {
+               console.log("mycpp---", result);
+               res.status(200).send(result);
+            })
+            .catch((err) => {
+               res.status(400).send(err);
+            });
+         break;
+      case "java":
+         console.log("java", input);
+         let resultPromiseJava = java.runSource(sourcecode, {
+            stdin: input,
+         });
+         resultPromiseJava
+            .then((result) => {
+               console.log(result);
+               res.status(200).send(result);
+            })
+            .catch((err) => {
+               res.status(400).send(err);
+            });
+         break;
+      case "python":
+         console.log("python");
+         let resultPromisePython = python.runSource(sourcecode, {
+            stdin: input,
+         });
+         resultPromisePython
+            .then((result) => {
+               console.log("mypython---", result);
+               res.status(200).send(result);
+            })
+            .catch((err) => {
+               res.status(400).send(err);
+            });
+         break;
+      case "javascript":
+         console.log("javascript");
+         let resultPromiseJavaScript = node.runSource(sourcecode, {
+            stdin: input,
+         });
+         resultPromiseJavaScript
+            .then((result) => {
+               console.log("mypython---", result);
+               res.status(200).send(result);
+            })
+            .catch((err) => {
+               res.status(400).send(err);
+            });
+         break;
+   }
+});
 //--------------------------------------------------
 app.listen(port, () => {
    console.log(`server is listening on port${port} `);
