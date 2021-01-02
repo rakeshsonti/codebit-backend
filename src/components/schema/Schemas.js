@@ -18,6 +18,8 @@ const problemSetSchema = new mongoose.Schema({
    questionKey: String,
    problemHead: String,
    problem: String,
+   input: String,
+   output: String,
    input1: String,
    input2: String,
    output1: String,

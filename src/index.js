@@ -114,6 +114,30 @@ app.get("/logout", async (req, res) => {
    }
 });
 //------------------------problem set model------------
+app.post("/getProblemSet/:tag", async (req, res) => {
+   const tag = req.params.tag;
+   if (isNullOrUndefined(tag)) {
+      res.status(401).send({ err: "invalid tag" });
+   } else {
+      const allProblem = await problemSetModel.find({
+         topicTag: tag,
+      });
+      res.send(allProblem);
+   }
+});
+app.post("/getProblem/:topic/:key", async (req, res) => {
+   const topic = req.params.topic;
+   const key = req.params.key;
+   if (isNullOrUndefined(topic) || isNullOrUndefined(key)) {
+      res.status(401).send({ err: "invalid topic or key value" });
+   } else {
+      const problem = await problemSetModel.find({
+         topicTag: topic,
+         questionKey: key,
+      });
+      res.send(problem);
+   }
+});
 app.post("/saveProblem", async (req, res) => {
    try {
       const {
@@ -121,6 +145,8 @@ app.post("/saveProblem", async (req, res) => {
          questionKey,
          problemHead,
          problem,
+         input,
+         output,
          input1,
          input2,
          output1,
@@ -139,6 +165,8 @@ app.post("/saveProblem", async (req, res) => {
          isNullOrUndefined(questionKey) ||
          isNullOrUndefined(problemHead) ||
          isNullOrUndefined(problem) ||
+         isNullOrUndefined(input) ||
+         isNullOrUndefined(output) ||
          isNullOrUndefined(input1) ||
          isNullOrUndefined(input2) ||
          isNullOrUndefined(output1) ||
@@ -167,6 +195,8 @@ app.post("/saveProblem", async (req, res) => {
                questionKey,
                problemHead,
                problem,
+               input,
+               output,
                input1,
                input2,
                output1,
