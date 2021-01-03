@@ -1,12 +1,18 @@
-
-   //if you are using java programming language
-   //your public class name must be Main
-   //if you are using  c or cpp language
-   //you must have to return 0 from int main function
-   //write your code here
-   #include <stdio.h>
-   int main()
-   {
-     printf("Hello word is great");
-     return 0;
-   }
+import java.io.*;
+import java.util.*;
+class Main
+{
+  public static void main (String[] args) {
+  Scanner sc=new Scanner(System.in);
+  int size=sc.nextInt();
+  int arr[]=new int[size];
+  for(int i=0;i<size;i++)
+  {
+    arr[i]=sc.nextInt();
+  }
+  for(int i=0;i<size;i++)
+  {
+    System.out.print(arr[i]+" ");
+  }
+  }
+}

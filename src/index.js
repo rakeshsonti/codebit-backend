@@ -137,11 +137,14 @@ app.post("/runTestCase", async (req, res) => {
       const newSourceCode = await problemSetModel.find({
          questionKey: key,
       });
-      let adminSourceCode = newSourceCode[0]["solution"];
-      console.log("admin source code", adminSourceCode, input);
+      // console.log(newSourceCode);
+      const cSourceCode = newSourceCode[0]["csolution"];
+      const cppSourceCode = newSourceCode[0]["cppsolution"];
+      const javaSourceCode = newSourceCode[0]["javasolution"];
+      const pythonSourceCode = newSourceCode[0]["pythonsolution"];
       switch (currentLanguage) {
          case "c":
-            await fs.writeFile("Main.c", adminSourceCode, function (err) {
+            await fs.writeFile("Main.c", cSourceCode, function (err) {
                if (err) throw err;
                console.log("Saved!");
             });
@@ -160,7 +163,7 @@ app.post("/runTestCase", async (req, res) => {
                });
             break;
          case "cpp":
-            await fs.writeFile("Main.cpp", adminSourceCode, function (err) {
+            await fs.writeFile("Main.cpp", cppSourceCode, function (err) {
                if (err) throw err;
                console.log("Saved!");
             });
@@ -175,7 +178,7 @@ app.post("/runTestCase", async (req, res) => {
                });
             break;
          case "java":
-            await fs.writeFile("Main.java", adminSourceCode, function (err) {
+            await fs.writeFile("Main.java", javaSourceCode, function (err) {
                if (err) throw err;
                console.log("Saved!");
             });
@@ -184,7 +187,7 @@ app.post("/runTestCase", async (req, res) => {
             });
             resultPromisejava
                .then((result) => {
-                  console.log(result);
+                  // console.log(result);
                   res.send({ res: result });
                })
                .catch((err) => {
@@ -192,7 +195,7 @@ app.post("/runTestCase", async (req, res) => {
                });
             break;
          case "python":
-            await fs.writeFile("Main.py", adminSourceCode, function (err) {
+            await fs.writeFile("Main.py", pythonSourceCode, function (err) {
                if (err) throw err;
                console.log("Saved!");
             });
@@ -283,7 +286,10 @@ app.post("/saveProblem", async (req, res) => {
          spaceComplexity,
          problemLevel,
          point,
-         solution,
+         csolution,
+         cppsolution,
+         javasolution,
+         pythonsolution,
       } = req.body;
 
       if (
@@ -302,7 +308,10 @@ app.post("/saveProblem", async (req, res) => {
          isNullOrUndefined(timeComplexity) ||
          isNullOrUndefined(spaceComplexity) ||
          isNullOrUndefined(problemLevel) ||
-         isNullOrUndefined(solution) ||
+         isNullOrUndefined(csolution) ||
+         isNullOrUndefined(cppsolution) ||
+         isNullOrUndefined(javasolution) ||
+         isNullOrUndefined(pythonsolution) ||
          isNullOrUndefined(point) ||
          isNaN(point)
       ) {
@@ -333,7 +342,10 @@ app.post("/saveProblem", async (req, res) => {
                spaceComplexity,
                problemLevel,
                point: newPoint,
-               solution,
+               csolution,
+               cppsolution,
+               javasolution,
+               pythonsolution,
                creationTime: new Date(),
             });
             await set.save();

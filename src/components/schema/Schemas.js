@@ -28,7 +28,10 @@ const problemSetSchema = new mongoose.Schema({
    timeComplexity: String,
    spaceComplexity: String,
    problemLevel: String,
-   solution: String,
+   csolution: String,
+   cppsolution: String,
+   javasolution: String,
+   pythonsolution: String,
    point: Number,
    creationTime: Date,
 });
@@ -37,5 +40,4 @@ module.exports = {
    userCodeSchema,
    userSchema,
    problemSetSchema,
-   
 };
