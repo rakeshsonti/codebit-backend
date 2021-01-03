@@ -113,7 +113,119 @@ app.get("/logout", async (req, res) => {
       res.sendStatus(200);
    }
 });
-//------------------------problem set model------------
+//------------------isDone endpoint--------------------------------
+app.post("/isdone", async (req, res) => {
+   const { key, isDone } = req.body;
+   await userCodeModel.findOneAndUpdate(
+      {
+         questionKey: key,
+         userId: req.session.userId,
+      },
+      {
+         isDone,
+      }
+   );
+   res.status(200).send({ success: " isdone changed is done successfully" });
+});
+//---------------------run test case--------------
+app.post("/runTestCase", async (req, res) => {
+   const { java, python, c, cpp } = require("compile-run");
+   const { currentLanguage, input, key } = req.body;
+   if (isNullOrUndefined(currentLanguage) || isNullOrUndefined(key)) {
+      res.status(401).send({ err: "invalid language or key" });
+   } else {
+      const newSourceCode = await problemSetModel.find({
+         questionKey: key,
+      });
+      let adminSourceCode = newSourceCode[0]["solution"];
+      console.log("admin source code", adminSourceCode, input);
+      switch (currentLanguage) {
+         case "c":
+            await fs.writeFile("Main.c", adminSourceCode, function (err) {
+               if (err) throw err;
+               console.log("Saved!");
+            });
+            let resultPromisec = c.runFile("./Main.c", { stdin: input });
+            resultPromisec
+               .then((result) => {
+                  // console.log(result);
+                  res.send({ res: result });
+                  return result.stdout;
+               })
+               .then((r) => {
+                  adminCodeResult = r;
+               })
+               .catch((err) => {
+                  console.log(err);
+               });
+            break;
+         case "cpp":
+            await fs.writeFile("Main.cpp", adminSourceCode, function (err) {
+               if (err) throw err;
+               console.log("Saved!");
+            });
+            let resultPromisecpp = cpp.runFile("./Main.cpp", { stdin: input });
+            resultPromisecpp
+               .then((result) => {
+                  // console.log(result);
+                  res.send({ res: result });
+               })
+               .catch((err) => {
+                  console.log(err);
+               });
+            break;
+         case "java":
+            await fs.writeFile("Main.java", adminSourceCode, function (err) {
+               if (err) throw err;
+               console.log("Saved!");
+            });
+            let resultPromisejava = java.runFile("./Main.java", {
+               stdin: input,
+            });
+            resultPromisejava
+               .then((result) => {
+                  console.log(result);
+                  res.send({ res: result });
+               })
+               .catch((err) => {
+                  console.log(err);
+               });
+            break;
+         case "python":
+            await fs.writeFile("Main.py", adminSourceCode, function (err) {
+               if (err) throw err;
+               console.log("Saved!");
+            });
+            let resultPromisepython = python.runFile("./Main.py", {
+               stdin: input,
+            });
+            resultPromisepython
+               .then((result) => {
+                  // console.log(result);
+                  res.send({ res: result });
+               })
+               .catch((err) => {
+                  console.log(err);
+               });
+            break;
+      }
+   } //else
+});
+
+//---------get default code when user render a problem first time
+app.get("/defaultCode", async (req, res) => {
+   const defaultCode = `
+   //if you are using java programming language
+   //your public class name must be Main
+   //if you are using  c or cpp language
+   //you must have to return 0 from int main function
+   //please remove above commented code and 
+   //fresh start from here
+   `;
+   res.send({ sourceCode: defaultCode, defaultLanguage: "java" });
+});
+
+//------get all problem according to the tag name------------
 app.post("/getProblemSet/:tag", async (req, res) => {
    const tag = req.params.tag;
    if (isNullOrUndefined(tag)) {
@@ -125,6 +237,7 @@ app.post("/getProblemSet/:tag", async (req, res) => {
       res.send(allProblem);
    }
 });
+//get one problem according to the question code
 app.post("/getProblem/:topic/:key", async (req, res) => {
    const topic = req.params.topic;
    const key = req.params.key;
@@ -133,6 +246,19 @@ app.post("/getProblem/:topic/:key", async (req, res) => {
    } else {
       const problem = await problemSetModel.find({
          topicTag: topic,
+         questionKey: key,
+      });
+      res.send(problem);
+   }
+});
+//get source code for a specific problem for a sprcific user
+app.post("/getInitialCode/:key", async (req, res) => {
+   const key = req.params.key;
+   if (isNullOrUndefined(key)) {
+      res.status(401).send({ err: "invalid key value" });
+   } else {
+      const problem = await userCodeModel.find({
+         userId: req.session.userId,
          questionKey: key,
       });
       res.send(problem);
@@ -218,6 +344,125 @@ app.post("/saveProblem", async (req, res) => {
       }
    } catch (e) {
       console.log(e);
+   }
+});
+// //----------------save problem per/question according to the user
+app.post("/saveUserCode", AuthMiddleware, async (req, res) => {
+   const { questionKey, currentLanguage, point, sourceCode } = req.body;
+   if (
+      isNullOrUndefined(questionKey) ||
+      isNullOrUndefined(currentLanguage) ||
+      isNullOrUndefined(point) ||
+      isNullOrUndefined(sourceCode)
+   ) {
+      res.status(401).send({
+         error: `invalid  values`,
+      });
+   } else {
+      const isExist = await userCodeModel.find({
+         userId: req.session.userId,
+         questionKey,
+      });
+      //if usercode already exist
+      if (isExist.length > 0) {
+         await userCodeModel.findOneAndUpdate(
+            {
+               userId: req.session.userId,
+               questionKey,
+            },
+            {
+               sourceCode,
+            }
+         );
+         res.status(200).send({ success: "saved successfully" });
+      } else {
+         //userCode does not exist
+         const newData = new userCodeModel({
+            userId: req.session.userId,
+            questionKey,
+            sourceCode,
+            point: Number(point),
+            isDone: false,
+            currentLanguage,
+         });
+         await newData.save();
+         res.status(200).send({ success: "saved successfully" });
+      }
+   }
+});
+//-----------------run usercode------run usercode-----------------------------
+app.post("/runCode", async (req, res) => {
+   const { java, python, node, c, cpp } = require("compile-run");
+   const { currentLanguage, sourceCode, input } = req.body;
+   if (isNullOrUndefined(currentLanguage)) {
+      res.status(401).send({ err: "invalid language" });
+   } else {
+      switch (currentLanguage) {
+         case "c":
+            await fs.writeFile("Main.c", sourceCode, function (err) {
+               if (err) throw err;
+               console.log("Saved!");
+            });
+            let resultPromisec = c.runFile("./Main.c", { stdin: input });
+            resultPromisec
+               .then((result) => {
+                  console.log(result);
+                  res.send({ res: result });
+               })
+               .catch((err) => {
+                  console.log(err);
+               });
+            break;
+         case "cpp":
+            await fs.writeFile("Main.cpp", sourceCode, function (err) {
+               if (err) throw err;
+               console.log("Saved!");
+            });
+            let resultPromisecpp = cpp.runFile("./Main.cpp", { stdin: input });
+            resultPromisecpp
+               .then((result) => {
+                  console.log(result);
+                  res.send({ res: result });
+               })
+               .catch((err) => {
+                  console.log(err);
+               });
+            break;
+         case "java":
+            await fs.writeFile("Main.java", sourceCode, function (err) {
+               if (err) throw err;
+               console.log("Saved!");
+            });
+            let resultPromisejava = java.runFile("./Main.java", {
+               stdin: input,
+            });
+            resultPromisejava
+               .then((result) => {
+                  console.log(result);
+                  res.send({ res: result });
+               })
+               .catch((err) => {
+                  console.log(err);
+               });
+            break;
+         case "python":
+            await fs.writeFile("Main.py", sourceCode, function (err) {
+               if (err) throw err;
+               console.log("Saved!");
+            });
+            let resultPromisepython = python.runFile("./Main.py", {
+               stdin: input,
+            });
+            resultPromisepython
+               .then((result) => {
+                  console.log(result);
+                  res.send({ res: result });
+               })
+               .catch((err) => {
+                  console.log(err);
+               });
+            break;
+      }
    }
 });
 

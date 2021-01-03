@@ -1,13 +1,21 @@
 import java.io.*;
 import java.util.*;
-public class Main
-{
-public static void main(String args[])
-{
+class Main{
+ public static void main (String[] args) {
 Scanner sc=new Scanner(System.in);
-int num1=sc.nextInt();
-int num2=sc.nextInt();
-System.out.println("ram is great nhi hai");
-System.out.println(num1+num2);
+int size=sc.nextInt();
+int arr[]=new int[size];
+for(int i=0;i<size;i++)
+{
+  arr[i]=sc.nextInt();
 }
+int sum=0;
+for(int i=0;i<size;i++)
+{
+  sum=sum+arr[i];
+}
+System.out.println("sum"+sum);
+   
+   
+ }
 }

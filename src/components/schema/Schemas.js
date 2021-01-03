@@ -6,11 +6,10 @@ const userSchema = new mongoose.Schema({
 });
 const userCodeSchema = new mongoose.Schema({
    sourceCode: String,
-   creditPoint: Number,
-   creationTime: Date,
-   level: String,
-   uniqueCode: String,
-   username: String,
+   currentLanguage: String,
+   point: Number,
+   questionKey: String,
+   isDone: Boolean,
    userId: mongoose.Schema.Types.ObjectId,
 });
 const problemSetSchema = new mongoose.Schema({
@@ -33,4 +32,10 @@ const problemSetSchema = new mongoose.Schema({
    point: Number,
    creationTime: Date,
 });
-module.exports = { userCodeSchema, userSchema, problemSetSchema };
+
+module.exports = {
+   userCodeSchema,
+   userSchema,
+   problemSetSchema,
+   
+};

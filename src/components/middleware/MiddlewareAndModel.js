@@ -1,7 +1,12 @@
 const mongoconnection = require("../connection/getConnection");
 const bcrypt = require("bcrypt");
 const schemas = require("../schema/Schemas");
-const { userCodeSchema, userSchema, problemSetSchema } = schemas;
+const {
+   defaultCodeSchema,
+   userCodeSchema,
+   userSchema,
+   problemSetSchema,
+} = schemas;
 const mongoose = require("mongoose");
 //connection to mongodb
 const db = mongoconnection.getConnection({ port: 27017 });
@@ -19,7 +24,7 @@ const myschema = new mongoose.Schema({
 });
 const mymodel = db.model("testing", myschema);
 //-------------------------------------
-const userCodeModel = db.model("code", userCodeSchema);
+const userCodeModel = db.model("userCode", userCodeSchema);
 // isNullOrUndifined return true if val is null or undefined else return false
 const isNullOrUndefined = (val) => val === null || val === undefined;
 //middleware for user authentication
