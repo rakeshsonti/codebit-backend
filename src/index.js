@@ -10,11 +10,12 @@ const session_secret = "codebit";
 const middlewares = require("./components/middleware/MiddlewareAndModel");
 const {
    AuthMiddleware,
-   SaveMiddleware,
+   // SaveMiddleware,
    userCodeModel,
    userModel,
-   mymodel,
+   // mymodel,
    problemSetModel,
+   doubtSectionModel,
 } = middlewares;
 app.use(express.json());
 //cors not needed for same host (backend and frontend)
@@ -38,7 +39,82 @@ app.get("/userinfo", AuthMiddleware, async (req, res) => {
    const user = await userModel.findById(req.session.userId);
    res.send({ email: user.emaild });
 });
-//----------------------------
+app.get("/userinformation", AuthMiddleware, async (req, res) => {
+   const user = await userModel.findById(req.session.userId);
+   res.send({ name: user.name });
+});
+//---------------------------------------------
+app.post("/deleteDoubt", async (req, res) => {
+   const { doubtId } = req.body;
+   const record = await doubtSectionModel.findByIdAndDelete({ _id: doubtId });
+   console.log(record);
+   res.send({ success: "doubt deleted successfully" });
+});
+//----------------------------------------------
+app.post("/deleteComment", async (req, res) => {
+   const { commentId, commentValue, commentedBy } = req.body;
+   const record = await doubtSectionModel.findById({ _id: commentId });
+   const idx = record.details.comments.findIndex((value) => {
+      if (
+         value.suggestion === commentValue &&
+         value.commentedBy === commentedBy
+      )
+         return true;
+   });
+   const deletedReocrd = record.details.comments.splice(idx, 1);
+   await record.save();
+   console.log("deleted reocrd : ", deletedReocrd);
+   res.send({ success: "comment deleted successfully" });
+});
+//----------------------------------------------
+app.post("/addComment", async (req, res) => {
+   const { commentId, commentValue } = req.body;
+   const user = await userModel.findById(req.session.userId);
+   const record = await doubtSectionModel.findById({ _id: commentId });
+   record.details.comments.push({
+      suggestion: commentValue,
+      commentedBy: user.name,
+   });
+   await record.save();
+   res.send({ success: "record is saved" });
+});
+//---------------doubt section initial load data------------
+app.get("/doubtSectionLoad", async (req, res) => {
+   const allDoubts = await doubtSectionModel.find().sort({
+      "details.askedTime": "desc",
+   });
+   // console.log(allDoubts);
+   res.send(allDoubts);
+});
+
+//--------doubt section--------------------
+app.post("/doubtSection", async (req, res) => {
+   const { problemHead, problemDescription } = req.body;
+   console.log(problemHead, problemDescription);
+   // doubtSectionModel
+   if (
+      isNullOrUndefined(problemHead) ||
+      isNullOrUndefined(problemDescription) ||
+      problemDescription.length === 0 ||
+      problemHead.length === 0
+   ) {
+      res.status(401).send({ err: "invalid input value" });
+   } else {
+      const time = new Date();
+      const date = time.toDateString() + " " + time.toLocaleTimeString();
+      const user = await userModel.findById(req.session.userId);
+      const newDoubt = new doubtSectionModel({
+         header: problemHead,
+         askedBy: user.name,
+         details: {
+            description: problemDescription,
+            askedTime: date,
+         },
+      });
+      await newDoubt.save();
+      res.status(201).send({ success: "doubt set successfully" });
+   } //else
+});
 
 //use mongoose method instead// we just disable mongo method
 mongoose.set("useFindAndModify", false);

@@ -2,10 +2,11 @@ const mongoconnection = require("../connection/getConnection");
 const bcrypt = require("bcrypt");
 const schemas = require("../schema/Schemas");
 const {
-   defaultCodeSchema,
+   // defaultCodeSchema,
    userCodeSchema,
    userSchema,
    problemSetSchema,
+   doubtSectionSchema,
 } = schemas;
 const mongoose = require("mongoose");
 //connection to mongodb
@@ -13,6 +14,8 @@ const db = mongoconnection.getConnection({ port: 27017 });
 const userModel = db.model("user", userSchema);
 //---------------------problem set model---------------
 const problemSetModel = db.model("problemSet", problemSetSchema);
+//------------doubt section model
+const doubtSectionModel = db.model("doubtSection", doubtSectionSchema);
 
 //--------------------------------
 const myschema = new mongoose.Schema({
@@ -79,4 +82,5 @@ module.exports = {
    userCodeModel,
    mymodel,
    problemSetModel,
+   doubtSectionModel,
 };

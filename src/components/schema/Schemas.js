@@ -12,6 +12,20 @@ const userCodeSchema = new mongoose.Schema({
    isDone: Boolean,
    userId: mongoose.Schema.Types.ObjectId,
 });
+const doubtSectionSchema = new mongoose.Schema({
+   header: String,
+   askedBy: String,
+   details: {
+      description: String,
+      askedTime: String,
+      comments: [
+         {
+            suggestion: String,
+            commentedBy: String,
+         },
+      ],
+   },
+});
 const problemSetSchema = new mongoose.Schema({
    topicTag: String,
    questionKey: String,
@@ -40,4 +54,5 @@ module.exports = {
    userCodeSchema,
    userSchema,
    problemSetSchema,
+   doubtSectionSchema,
 };
