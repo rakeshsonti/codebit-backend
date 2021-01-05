@@ -34,6 +34,17 @@ app.use(
       cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 },
    })
 );
+//--------------------leaderboard-----------------------
+app.get("/leaderboard", async (req, res) => {
+   console.log("aaya");
+   const result = await userCodeModel.find({
+      userId: req.session.userId,
+      isDone: false,
+   });
+   console.log(result);
+   res.send({ success: result });
+});
+
 //browser use this end point to know whether the user is login or not
 app.get("/userinfo", AuthMiddleware, async (req, res) => {
    const user = await userModel.findById(req.session.userId);
