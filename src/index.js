@@ -10,10 +10,8 @@ const session_secret = "codebit";
 const middlewares = require("./components/middleware/MiddlewareAndModel");
 const {
    AuthMiddleware,
-   // SaveMiddleware,
    userCodeModel,
    userModel,
-   // mymodel,
    problemSetModel,
    doubtSectionModel,
    leaderboardModel,
@@ -26,8 +24,6 @@ app.use(
       origin: "http://localhost:3000",
    })
 );
-//add body to req
-
 //add a property session to req //internally handle al encrption/ decrption
 app.use(
    session({
@@ -41,7 +37,6 @@ app.get("/getProfile", async (req, res) => {
    const profile = await leaderboardModel.find({
       userId,
    });
-   console.log("profile :", profile);
    res.send({ profile: profile });
 });
 
@@ -53,7 +48,6 @@ app.post("/getLeaderboard", async (req, res) => {
       .sort({ point: "desc" })
       .skip(skip)
       .limit(limit);
-   console.log("sort data :", allUserData);
    res.send({ allData: allUserData });
 });
 
@@ -69,8 +63,7 @@ app.get("/userinformation", AuthMiddleware, async (req, res) => {
 //---------------------------------------------
 app.post("/deleteDoubt", async (req, res) => {
    const { doubtId } = req.body;
-   const record = await doubtSectionModel.findByIdAndDelete({ _id: doubtId });
-   console.log(record);
+   await doubtSectionModel.findByIdAndDelete({ _id: doubtId });
    res.send({ success: "doubt deleted successfully" });
 });
 //----------------------------------------------
@@ -84,9 +77,8 @@ app.post("/deleteComment", async (req, res) => {
       )
          return true;
    });
-   const deletedReocrd = record.details.comments.splice(idx, 1);
+   record.details.comments.splice(idx, 1);
    await record.save();
-   console.log("deleted reocrd : ", deletedReocrd);
    res.send({ success: "comment deleted successfully" });
 });
 //----------------------------------------------
@@ -106,14 +98,12 @@ app.get("/doubtSectionLoad", async (req, res) => {
    const allDoubts = await doubtSectionModel.find().sort({
       "details.askedTime": "desc",
    });
-   // console.log(allDoubts);
    res.send(allDoubts);
 });
 
 //--------doubt section--------------------
 app.post("/doubtSection", async (req, res) => {
    const { problemHead, problemDescription } = req.body;
-   console.log(problemHead, problemDescription);
    // doubtSectionModel
    if (
       isNullOrUndefined(problemHead) ||
@@ -221,32 +211,7 @@ app.get("/logout", async (req, res) => {
       res.sendStatus(200);
    }
 });
-//---------------------------------------
-// app.get("/mytest", async (req, res) => {
-//    const userId = req.query.userId;
-//    let total = 0;
-//    const res1 = await userCodeModel.find({ userId, isDone: true });
-//    res1.map((val, index) => {
-//       total = total + Number(val.point);
-//    });
-//    console.log(total);
 
-//    // console.log("res1 : ", res1);
-//    // const flag = true;
-//    // const result = await userCodeModel.aggregate([
-//    //    {
-//    //       $project: {
-//    //          userId: userId,
-//    //          idDone: flag,
-//    //          point: {
-//    //             total: { $sum: "$point" },
-//    //          },
-//    //       },
-//    //    },
-//    // ]);
-//    // console.log(result);
-//    res.send({ results: res1 });
-// });
 //------------------isDone endpoint--------------------------------
 app.post("/isdone", async (req, res) => {
    const { key, isDone } = req.body;
@@ -271,7 +236,6 @@ app.post("/isdone", async (req, res) => {
       const existsUserData = await leaderboardModel.find({
          userId: req.session.userId,
       });
-      console.log("existing user data", existsUserData);
       if (
          isNullOrUndefined(existsUserData) ||
          existsUserData === "" ||
@@ -284,7 +248,6 @@ app.post("/isdone", async (req, res) => {
             name: userInfo.name,
             username: userInfo.email,
          });
-         console.log("already not exist user", obj);
          await obj.save();
       } else {
          await leaderboardModel.findOneAndUpdate(
@@ -295,7 +258,6 @@ app.post("/isdone", async (req, res) => {
                point: totalPoint,
             }
          );
-         console.log("user  exist");
       }
    }
    res.status(200).send({ success: " isdone changed  successfully" });
@@ -310,24 +272,20 @@ app.post("/runTestCase", async (req, res) => {
       const newSourceCode = await problemSetModel.find({
          questionKey: key,
       });
-      // console.log(newSourceCode);
       const currentLanguage = newSourceCode[0]["language"];
       const input = newSourceCode[0]["userInput"];
       const cSourceCode = newSourceCode[0]["csolution"];
       const cppSourceCode = newSourceCode[0]["cppsolution"];
       const javaSourceCode = newSourceCode[0]["javasolution"];
       const pythonSourceCode = newSourceCode[0]["pythonsolution"];
-      console.log("my input", input);
       switch (currentLanguage) {
          case "c":
             fs.writeFile("Main.c", cSourceCode, function (err) {
                if (err) throw err;
-               console.log(" c Saved!");
             });
             let resultPromisec = c.runFile("./Main.c", { stdin: input });
             resultPromisec
                .then((result) => {
-                  // console.log(result);
                   res.send({ res: result });
                   return result.stdout;
                })
@@ -341,12 +299,10 @@ app.post("/runTestCase", async (req, res) => {
          case "cpp":
             fs.writeFile("Main.cpp", cppSourceCode, function (err) {
                if (err) throw err;
-               console.log("cppSaved!");
             });
             let resultPromisecpp = cpp.runFile("./Main.cpp", { stdin: input });
             resultPromisecpp
                .then((result) => {
-                  // console.log(result);
                   res.send({ res: result });
                })
                .catch((err) => {
@@ -356,14 +312,12 @@ app.post("/runTestCase", async (req, res) => {
          case "java":
             fs.writeFile("Main.java", javaSourceCode, function (err) {
                if (err) throw err;
-               console.log("javaSaved!");
             });
             let resultPromisejava = java.runFile("./Main.java", {
                stdin: input,
             });
             resultPromisejava
                .then((result) => {
-                  // console.log(result);
                   res.send({ res: result });
                })
                .catch((err) => {
@@ -373,14 +327,12 @@ app.post("/runTestCase", async (req, res) => {
          case "python":
             fs.writeFile("Main.py", pythonSourceCode, function (err) {
                if (err) throw err;
-               console.log("pythonSaved!");
             });
             let resultPromisepython = python.runFile("./Main.py", {
                stdin: input,
             });
             resultPromisepython
                .then((result) => {
-                  // console.log(result);
                   res.send({ res: result });
                })
                .catch((err) => {
@@ -398,8 +350,6 @@ app.post("/runUserCode", async (req, res) => {
       questionKey: key,
    });
    const input = newSourceCode[0]["userInput"];
-   console.log("userinput", input);
-   console.log("sourcecode", sourceCode);
    if (isNullOrUndefined(currentLanguage)) {
       res.status(401).send({ err: "invalid language" });
    } else {
@@ -407,12 +357,10 @@ app.post("/runUserCode", async (req, res) => {
          case "c":
             fs.writeFile("Main.c", sourceCode, function (err) {
                if (err) throw err;
-               console.log("Saved!");
             });
             let resultPromisec = c.runFile("./Main.c", { stdin: input });
             resultPromisec
                .then((result) => {
-                  console.log(result);
                   res.send({ res: result });
                })
                .catch((err) => {
@@ -422,12 +370,10 @@ app.post("/runUserCode", async (req, res) => {
          case "cpp":
             fs.writeFile("Main.cpp", sourceCode, function (err) {
                if (err) throw err;
-               console.log("Saved!");
             });
             let resultPromisecpp = cpp.runFile("./Main.cpp", { stdin: input });
             resultPromisecpp
                .then((result) => {
-                  console.log(result);
                   res.send({ res: result });
                })
                .catch((err) => {
@@ -437,14 +383,12 @@ app.post("/runUserCode", async (req, res) => {
          case "java":
             fs.writeFile("Main.java", sourceCode, function (err) {
                if (err) throw err;
-               console.log("Saved!");
             });
             let resultPromisejava = java.runFile("./Main.java", {
                stdin: input,
             });
             resultPromisejava
                .then((result) => {
-                  console.log(result);
                   res.send({ res: result });
                })
                .catch((err) => {
@@ -454,14 +398,12 @@ app.post("/runUserCode", async (req, res) => {
          case "python":
             fs.writeFile("Main.py", sourceCode, function (err) {
                if (err) throw err;
-               console.log("Saved!");
             });
             let resultPromisepython = python.runFile("./Main.py", {
                stdin: input,
             });
             resultPromisepython
                .then((result) => {
-                  console.log(result);
                   res.send({ res: result });
                })
                .catch((err) => {
@@ -620,7 +562,6 @@ app.post("/saveProblem", async (req, res) => {
 // //----------------save problem per/question according to the user
 app.post("/saveUserCode", AuthMiddleware, async (req, res) => {
    const { questionKey, currentLanguage, point, sourceCode } = req.body;
-   // console.log("current language : ", currentLanguage);
    if (
       isNullOrUndefined(questionKey) ||
       isNullOrUndefined(currentLanguage) ||
@@ -667,9 +608,6 @@ app.post("/saveUserCode", AuthMiddleware, async (req, res) => {
 app.post("/runCode", async (req, res) => {
    const { java, python, c, cpp } = require("compile-run");
    const { currentLanguage, sourceCode, input } = req.body;
-   console.log("input :", input);
-   console.log("source code: ", sourceCode);
-   console.log("current languae :", currentLanguage);
    if (isNullOrUndefined(currentLanguage)) {
       res.status(401).send({ err: "invalid language" });
    } else {
@@ -677,12 +615,10 @@ app.post("/runCode", async (req, res) => {
          case "c":
             fs.writeFile("Main.c", sourceCode, function (err) {
                if (err) throw err;
-               console.log("c Saved!");
             });
             let resultPromisec = c.runFile("./Main.c", { stdin: input });
             resultPromisec
                .then((result) => {
-                  console.log(result);
                   res.send({ res: result });
                })
                .catch((err) => {
@@ -692,14 +628,12 @@ app.post("/runCode", async (req, res) => {
          case "cpp":
             fs.writeFile("Main.cpp", sourceCode, function (err) {
                if (err) throw err;
-               console.log("cpp Saved!");
             });
             let resultPromisecpp = cpp.runFile("./Main.cpp", {
                stdin: input,
             });
             resultPromisecpp
                .then((result) => {
-                  console.log(result);
                   res.send({ res: result });
                })
                .catch((err) => {
@@ -709,14 +643,12 @@ app.post("/runCode", async (req, res) => {
          case "java":
             fs.writeFile("Main.java", sourceCode, function (err) {
                if (err) throw err;
-               console.log("java Saved!");
             });
             let resultPromisejava = java.runFile("./Main.java", {
                stdin: input,
             });
             resultPromisejava
                .then((result) => {
-                  console.log(result);
                   res.send({ res: result });
                })
                .catch((err) => {
@@ -726,14 +658,12 @@ app.post("/runCode", async (req, res) => {
          case "python":
             fs.writeFile("Main.py", sourceCode, function (err) {
                if (err) throw err;
-               console.log("python Saved!");
             });
             let resultPromisepython = python.runFile("./Main.py", {
                stdin: input,
             });
             resultPromisepython
                .then((result) => {
-                  console.log(result);
                   res.send({ res: result });
                })
                .catch((err) => {
@@ -744,244 +674,6 @@ app.post("/runCode", async (req, res) => {
    }
 });
 
-//----------------------------------------------
-//return all code of specific user
-// app.get("/getCode", AuthMiddleware, async (req, res) => {
-//    const userId = req.user._id;
-//    const allcode = await userCodeModel.find({ userId });
-//    res.send(allcode);
-// });
-
-//for save code of specific user in database only for admin
-//when user click on start button set trigger this endpoint so that initially problem set for perticular user
-// app.post("/saveAdmin", AuthMiddleware, SaveMiddleware, async (req, res) => {
-//    const userId = req.user._id;
-//    const problemCode = req.headers["x-uniquecode"];
-//    const allcode = await userCodeModel.find({
-//       userId,
-//       uniqueCode: problemCode,
-//    });
-//    if (allcode.length > 0) {
-//       //data already exists in database
-//       let { sourceCode, creditPoint, level } = req.body;
-//       const exist = await userCodeModel.findOneAndUpdate(
-//          { userId, uniqueCode: problemCode },
-//          {
-//             sourceCode: sourceCode,
-//             creditPoint: creditPoint,
-//             level: level,
-//             uniqueCode: req.headers["x-uniquecode"],
-//             username: req.headers["x-username"],
-//             userId: req.user._id,
-//          }
-//       );
-//       res.status(200).send({ message: exist });
-//    } else {
-//       //data don't exist in database
-//       let { sourceCode, creditPoint, level } = req.body;
-//       creditPoint = Number(creditPoint);
-//       const newCode = new userCodeModel({
-//          sourceCode,
-//          creditPoint,
-//          creationTime: new Date(),
-//          level,
-//          uniqueCode: req.headers["x-uniquecode"],
-//          username: req.headers["x-username"],
-//          userId: req.user._id,
-//       });
-//       await newCode.save();
-//       res.status(200).send({ message: newCode });
-//    }
-// });
-// //return one code of specific user whatever problem code pass by the user
-// app.post("/getOneCode", AuthMiddleware, async (req, res) => {
-//    const userId = req.user._id;
-//    const problemCode = req.headers["x-uniquecode"];
-//    const allcode = await userCodeModel.find({
-//       userId,
-//       uniqueCode: problemCode,
-//    });
-//    res.send(allcode);
-// });
-
-//use admin to change something in bulk
-// app.post("/updateAllProblem", AuthMiddleware, async (req, res) => {
-//    const uniqueCode = req.headers["x-uniquecode"];
-//    const { sourceCode, creditPoint, level } = req.body;
-
-//    await userCodeModel.updateMany(
-//       { uniqueCode },
-//       {
-//          sourceCode: sourceCode,
-//          creditPoint: creditPoint,
-//          level: level,
-//       }
-//    );
-//    res.send("all code updated");
-// });
-// app.get("/allCode", AuthMiddleware, async (req, res) => {
-//    const allCodeInfo = await userCodeModel.find();
-//    res.send(allCodeInfo);
-// });
-// app.get("/allUser", AuthMiddleware, async (req, res) => {
-//    const allUserInfo = await userModel.find();
-//    res.send(allUserInfo);
-// });
-//update existing code of user
-// app.post("/upateUserCode", AuthMiddleware, SaveMiddleware, async (req, res) => {
-//    const userId = req.user._id;
-//    const problemCode = req.headers["x-uniquecode"];
-//    const allcode = await userCodeModel.find({
-//       userId,
-//       uniqueCode: problemCode,
-//    });
-//    if (allcode.length > 0) {
-//       //data already exists in database
-//       let { sourceCode } = req.body;
-//       const exist = await userCodeModel.findOneAndUpdate(
-//          { userId, uniqueCode: problemCode },
-//          {
-//             sourceCode: sourceCode,
-//          }
-//       );
-//       res.status(200).send({ message: exist });
-//    } else {
-//       res.status(401).send("problem does not exist");
-//    }
-// });
-//run code of the user
-//before use change sourcecode to sourceCode
-const sourcecode = `console.log('Hello World');`;
-app.post("/run", async (req, res) => {
-   console.log("run point hit hua");
-   const { java, python, node, c, cpp } = require("compile-run");
-   const codeBody = req.body;
-   // const {uCode,userInput}=req.body;
-   const sourceCode = req.body["sourceCode"];
-   const language = req.body["language"];
-   const input = req.body["input"];
-   console.log("source code", sourceCode);
-   console.log(typeof sourceCode);
-   console.log(typeof input);
-   // const { sourceCode, language, input } = codeBody;
-   switch (language) {
-      case "c":
-         console.log("c");
-         let resultPromiseC = c.runSource(sourcecode, { stdin: input });
-         resultPromiseC
-            .then((result) => {
-               console.log(result);
-               res.status(200).send(result);
-            })
-            .catch((err) => {
-               res.status(400).send(err);
-            });
-         break;
-      case "cpp":
-         console.log("cpp");
-         let resultPromiseCpp = cpp.runSource(sourceCode, { stdin: input });
-         resultPromiseCpp
-            .then((result) => {
-               console.log("mycpp---", result);
-               res.status(200).send(result);
-            })
-            .catch((err) => {
-               res.status(400).send(err);
-            });
-         break;
-      case "java":
-         console.log("java", typeof input, input);
-         // let resultPromiseJava = java.runSource(sourcecode, {
-         //    stdin: input,
-         // });
-         // resultPromiseJava
-         //    .then((result) => {
-         //       console.log("result---", result.toString());
-         //       res.status(200).send(result);
-         //    })
-         //    .catch((err) => {
-         //       console.log("err---", err);
-         //       res.status(400).send(err);
-         //    });
-         fs.writeFile("Main.java", sourceCode, function (err) {
-            if (err) throw err;
-            console.log("Saved!");
-         });
-         java.runFile("./Main.java", { stdin: input }, (err, result) => {
-            if (err) {
-               console.log(err);
-               res.send(err.stderr, err, result);
-            } else {
-               console.log(result);
-               res.send(result.stdout);
-            }
-         });
-         break;
-      case "python":
-         console.log("python");
-         let resultPromisePython = python.runSource(sourcecode, {
-            stdin: input,
-         });
-         resultPromisePython
-            .then((result) => {
-               console.log("mypython---", result);
-               res.status(200).send(result);
-            })
-            .catch((err) => {
-               res.status(400).send(err);
-            });
-         break;
-      case "javascript":
-         console.log("javascript");
-         let resultPromiseJavaScript = node.runSource(sourcecode, {
-            stdin: input,
-         });
-         resultPromiseJavaScript
-            .then((result) => {
-               console.log("mypython---", result);
-               res.status(200).send(result);
-            })
-            .catch((err) => {
-               res.status(400).send(err);
-            });
-         break;
-   }
-});
-//---------------------
-//--------------------------------------------
-// app.post("/testing", async (req, res) => {
-//    try {
-//       const fulltime = new Date();
-//       const { name, rollNumber, done } = req.body;
-//       const mytime = new Date().toLocaleDateString();
-//       const obj = {
-//          name: name,
-//          rollNumber: rollNumber,
-//          done: done,
-//          fullTime: fulltime,
-//          time: mytime,
-//       };
-//       console.log("tesing");
-//       const newuser = new mymodel(obj);
-//       await newuser.save();
-//       res.send(newuser);
-//    } catch (e) {
-//       res.status(401).send("error", e);
-//    }
-// });
-// app.get("/gettestdata", async (req, res) => {
-//    try {
-//       const data = await mymodel.find();
-//       console.log(data);
-//       res.send(data);
-//    } catch (e) {
-//       console.log(e);
-//       res.status(401).send(e);
-//    }
-// });
-
-//--------------------------------------------------
 app.listen(port, () => {
    console.log(`server is listening on port${port} `);
 });
-// module.exports = { app };
