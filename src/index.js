@@ -16,6 +16,7 @@ const {
    // mymodel,
    problemSetModel,
    doubtSectionModel,
+   leaderboardModel,
 } = middlewares;
 app.use(express.json());
 //cors not needed for same host (backend and frontend)
@@ -35,14 +36,25 @@ app.use(
    })
 );
 //--------------------leaderboard-----------------------
-app.get("/leaderboard", async (req, res) => {
-   console.log("aaya");
-   const result = await userCodeModel.find({
-      userId: req.session.userId,
-      isDone: false,
+app.get("/getProfile", async (req, res) => {
+   const userId = req.session.userId;
+   const profile = await leaderboardModel.find({
+      userId,
    });
-   console.log(result);
-   res.send({ success: result });
+   console.log("profile :", profile);
+   res.send({ profile: profile });
+});
+
+//-----------------------------------
+app.post("/getLeaderboard", async (req, res) => {
+   const { limit, skip } = req.body;
+   const allUserData = await leaderboardModel
+      .find()
+      .sort({ point: "desc" })
+      .skip(skip)
+      .limit(limit);
+   console.log("sort data :", allUserData);
+   res.send({ allData: allUserData });
 });
 
 //browser use this end point to know whether the user is login or not
@@ -160,8 +172,17 @@ app.post("/signup", async (req, res) => {
                   email,
                   password: hashPwd,
                });
+               //create a userinfo for leaderboared
                await newUser.save();
                req.session.userId = newUser._id;
+               const obj = new leaderboardModel({
+                  point: 0,
+                  userId: newUser._id,
+                  name: name,
+                  username: email,
+               });
+               await obj.save();
+
                res.status(201).send({
                   success: `sign up`,
                });
@@ -200,6 +221,32 @@ app.get("/logout", async (req, res) => {
       res.sendStatus(200);
    }
 });
+//---------------------------------------
+// app.get("/mytest", async (req, res) => {
+//    const userId = req.query.userId;
+//    let total = 0;
+//    const res1 = await userCodeModel.find({ userId, isDone: true });
+//    res1.map((val, index) => {
+//       total = total + Number(val.point);
+//    });
+//    console.log(total);
+
+//    // console.log("res1 : ", res1);
+//    // const flag = true;
+//    // const result = await userCodeModel.aggregate([
+//    //    {
+//    //       $project: {
+//    //          userId: userId,
+//    //          idDone: flag,
+//    //          point: {
+//    //             total: { $sum: "$point" },
+//    //          },
+//    //       },
+//    //    },
+//    // ]);
+//    // console.log(result);
+//    res.send({ results: res1 });
+// });
 //------------------isDone endpoint--------------------------------
 app.post("/isdone", async (req, res) => {
    const { key, isDone } = req.body;
@@ -212,28 +259,70 @@ app.post("/isdone", async (req, res) => {
          isDone,
       }
    );
-   res.status(200).send({ success: " isdone changed is done successfully" });
+   if (isDone) {
+      let totalPoint = 0;
+      const res1 = await userCodeModel.find({
+         userId: req.session.userId,
+         isDone: true,
+      });
+      res1.forEach((val) => {
+         totalPoint = totalPoint + Number(val.point);
+      });
+      const existsUserData = await leaderboardModel.find({
+         userId: req.session.userId,
+      });
+      console.log("existing user data", existsUserData);
+      if (
+         isNullOrUndefined(existsUserData) ||
+         existsUserData === "" ||
+         existsUserData === []
+      ) {
+         const userInfo = await userModel.findById({ _id: req.session.userId });
+         const obj = new leaderboardModel({
+            point: totalPoint,
+            userId: req.session.userId,
+            name: userInfo.name,
+            username: userInfo.email,
+         });
+         console.log("already not exist user", obj);
+         await obj.save();
+      } else {
+         await leaderboardModel.findOneAndUpdate(
+            {
+               userId: req.session.userId,
+            },
+            {
+               point: totalPoint,
+            }
+         );
+         console.log("user  exist");
+      }
+   }
+   res.status(200).send({ success: " isdone changed  successfully" });
 });
 //---------------------run test case--------------
 app.post("/runTestCase", async (req, res) => {
    const { java, python, c, cpp } = require("compile-run");
-   const { currentLanguage, input, key } = req.body;
-   if (isNullOrUndefined(currentLanguage) || isNullOrUndefined(key)) {
-      res.status(401).send({ err: "invalid language or key" });
+   const { key } = req.body;
+   if (isNullOrUndefined(key)) {
+      res.status(401).send({ err: "invalid  key" });
    } else {
       const newSourceCode = await problemSetModel.find({
          questionKey: key,
       });
       // console.log(newSourceCode);
+      const currentLanguage = newSourceCode[0]["language"];
+      const input = newSourceCode[0]["userInput"];
       const cSourceCode = newSourceCode[0]["csolution"];
       const cppSourceCode = newSourceCode[0]["cppsolution"];
       const javaSourceCode = newSourceCode[0]["javasolution"];
       const pythonSourceCode = newSourceCode[0]["pythonsolution"];
+      console.log("my input", input);
       switch (currentLanguage) {
          case "c":
-            await fs.writeFile("Main.c", cSourceCode, function (err) {
+            fs.writeFile("Main.c", cSourceCode, function (err) {
                if (err) throw err;
-               console.log("Saved!");
+               console.log(" c Saved!");
             });
             let resultPromisec = c.runFile("./Main.c", { stdin: input });
             resultPromisec
@@ -250,9 +339,9 @@ app.post("/runTestCase", async (req, res) => {
                });
             break;
          case "cpp":
-            await fs.writeFile("Main.cpp", cppSourceCode, function (err) {
+            fs.writeFile("Main.cpp", cppSourceCode, function (err) {
                if (err) throw err;
-               console.log("Saved!");
+               console.log("cppSaved!");
             });
             let resultPromisecpp = cpp.runFile("./Main.cpp", { stdin: input });
             resultPromisecpp
@@ -265,9 +354,9 @@ app.post("/runTestCase", async (req, res) => {
                });
             break;
          case "java":
-            await fs.writeFile("Main.java", javaSourceCode, function (err) {
+            fs.writeFile("Main.java", javaSourceCode, function (err) {
                if (err) throw err;
-               console.log("Saved!");
+               console.log("javaSaved!");
             });
             let resultPromisejava = java.runFile("./Main.java", {
                stdin: input,
@@ -282,9 +371,9 @@ app.post("/runTestCase", async (req, res) => {
                });
             break;
          case "python":
-            await fs.writeFile("Main.py", pythonSourceCode, function (err) {
+            fs.writeFile("Main.py", pythonSourceCode, function (err) {
                if (err) throw err;
-               console.log("Saved!");
+               console.log("pythonSaved!");
             });
             let resultPromisepython = python.runFile("./Main.py", {
                stdin: input,
@@ -300,6 +389,87 @@ app.post("/runTestCase", async (req, res) => {
             break;
       }
    } //else
+});
+//---------------------------------------------------------------------
+app.post("/runUserCode", async (req, res) => {
+   const { java, python, c, cpp } = require("compile-run");
+   const { currentLanguage, sourceCode, key } = req.body;
+   const newSourceCode = await problemSetModel.find({
+      questionKey: key,
+   });
+   const input = newSourceCode[0]["userInput"];
+   console.log("userinput", input);
+   console.log("sourcecode", sourceCode);
+   if (isNullOrUndefined(currentLanguage)) {
+      res.status(401).send({ err: "invalid language" });
+   } else {
+      switch (currentLanguage) {
+         case "c":
+            fs.writeFile("Main.c", sourceCode, function (err) {
+               if (err) throw err;
+               console.log("Saved!");
+            });
+            let resultPromisec = c.runFile("./Main.c", { stdin: input });
+            resultPromisec
+               .then((result) => {
+                  console.log(result);
+                  res.send({ res: result });
+               })
+               .catch((err) => {
+                  console.log(err);
+               });
+            break;
+         case "cpp":
+            fs.writeFile("Main.cpp", sourceCode, function (err) {
+               if (err) throw err;
+               console.log("Saved!");
+            });
+            let resultPromisecpp = cpp.runFile("./Main.cpp", { stdin: input });
+            resultPromisecpp
+               .then((result) => {
+                  console.log(result);
+                  res.send({ res: result });
+               })
+               .catch((err) => {
+                  console.log(err);
+               });
+            break;
+         case "java":
+            fs.writeFile("Main.java", sourceCode, function (err) {
+               if (err) throw err;
+               console.log("Saved!");
+            });
+            let resultPromisejava = java.runFile("./Main.java", {
+               stdin: input,
+            });
+            resultPromisejava
+               .then((result) => {
+                  console.log(result);
+                  res.send({ res: result });
+               })
+               .catch((err) => {
+                  console.log(err);
+               });
+            break;
+         case "python":
+            fs.writeFile("Main.py", sourceCode, function (err) {
+               if (err) throw err;
+               console.log("Saved!");
+            });
+            let resultPromisepython = python.runFile("./Main.py", {
+               stdin: input,
+            });
+            resultPromisepython
+               .then((result) => {
+                  console.log(result);
+                  res.send({ res: result });
+               })
+               .catch((err) => {
+                  console.log(err);
+               });
+            break;
+      }
+   }
 });
 
 //---------get default code when user render a problem first time
@@ -377,6 +547,8 @@ app.post("/saveProblem", async (req, res) => {
          cppsolution,
          javasolution,
          pythonsolution,
+         language,
+         userInput,
       } = req.body;
 
       if (
@@ -395,12 +567,10 @@ app.post("/saveProblem", async (req, res) => {
          isNullOrUndefined(timeComplexity) ||
          isNullOrUndefined(spaceComplexity) ||
          isNullOrUndefined(problemLevel) ||
-         isNullOrUndefined(csolution) ||
-         isNullOrUndefined(cppsolution) ||
-         isNullOrUndefined(javasolution) ||
-         isNullOrUndefined(pythonsolution) ||
          isNullOrUndefined(point) ||
-         isNaN(point)
+         isNaN(point) ||
+         isNullOrUndefined(language) ||
+         isNullOrUndefined(userInput)
       ) {
          res.status(401).send({ error: "error :all field are mandatory!" });
       } else {
@@ -434,6 +604,8 @@ app.post("/saveProblem", async (req, res) => {
                javasolution,
                pythonsolution,
                creationTime: new Date(),
+               language,
+               userInput,
             });
             await set.save();
             res.status(201).send({
@@ -448,6 +620,7 @@ app.post("/saveProblem", async (req, res) => {
 // //----------------save problem per/question according to the user
 app.post("/saveUserCode", AuthMiddleware, async (req, res) => {
    const { questionKey, currentLanguage, point, sourceCode } = req.body;
+   // console.log("current language : ", currentLanguage);
    if (
       isNullOrUndefined(questionKey) ||
       isNullOrUndefined(currentLanguage) ||
@@ -471,6 +644,7 @@ app.post("/saveUserCode", AuthMiddleware, async (req, res) => {
             },
             {
                sourceCode,
+               currentLanguage: currentLanguage,
             }
          );
          res.status(200).send({ success: "saved successfully" });
@@ -491,16 +665,19 @@ app.post("/saveUserCode", AuthMiddleware, async (req, res) => {
 });
 //-----------------run usercode------run usercode-----------------------------
 app.post("/runCode", async (req, res) => {
-   const { java, python, node, c, cpp } = require("compile-run");
+   const { java, python, c, cpp } = require("compile-run");
    const { currentLanguage, sourceCode, input } = req.body;
+   console.log("input :", input);
+   console.log("source code: ", sourceCode);
+   console.log("current languae :", currentLanguage);
    if (isNullOrUndefined(currentLanguage)) {
       res.status(401).send({ err: "invalid language" });
    } else {
       switch (currentLanguage) {
          case "c":
-            await fs.writeFile("Main.c", sourceCode, function (err) {
+            fs.writeFile("Main.c", sourceCode, function (err) {
                if (err) throw err;
-               console.log("Saved!");
+               console.log("c Saved!");
             });
             let resultPromisec = c.runFile("./Main.c", { stdin: input });
             resultPromisec
@@ -513,11 +690,13 @@ app.post("/runCode", async (req, res) => {
                });
             break;
          case "cpp":
-            await fs.writeFile("Main.cpp", sourceCode, function (err) {
+            fs.writeFile("Main.cpp", sourceCode, function (err) {
                if (err) throw err;
-               console.log("Saved!");
+               console.log("cpp Saved!");
             });
-            let resultPromisecpp = cpp.runFile("./Main.cpp", { stdin: input });
+            let resultPromisecpp = cpp.runFile("./Main.cpp", {
+               stdin: input,
+            });
             resultPromisecpp
                .then((result) => {
                   console.log(result);
@@ -528,9 +707,9 @@ app.post("/runCode", async (req, res) => {
                });
             break;
          case "java":
-            await fs.writeFile("Main.java", sourceCode, function (err) {
+            fs.writeFile("Main.java", sourceCode, function (err) {
                if (err) throw err;
-               console.log("Saved!");
+               console.log("java Saved!");
             });
             let resultPromisejava = java.runFile("./Main.java", {
                stdin: input,
@@ -545,9 +724,9 @@ app.post("/runCode", async (req, res) => {
                });
             break;
          case "python":
-            await fs.writeFile("Main.py", sourceCode, function (err) {
+            fs.writeFile("Main.py", sourceCode, function (err) {
                if (err) throw err;
-               console.log("Saved!");
+               console.log("python Saved!");
             });
             let resultPromisepython = python.runFile("./Main.py", {
                stdin: input,

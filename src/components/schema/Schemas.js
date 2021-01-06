@@ -12,6 +12,12 @@ const userCodeSchema = new mongoose.Schema({
    isDone: Boolean,
    userId: mongoose.Schema.Types.ObjectId,
 });
+const leaderboardSchema = new mongoose.Schema({
+   point: Number,
+   name: String,
+   username: String,
+   userId: mongoose.Schema.Types.ObjectId,
+});
 const doubtSectionSchema = new mongoose.Schema({
    header: String,
    askedBy: String,
@@ -48,6 +54,8 @@ const problemSetSchema = new mongoose.Schema({
    pythonsolution: String,
    point: Number,
    creationTime: Date,
+   language: String,
+   userInput: String,
 });
 
 module.exports = {
@@ -55,4 +63,5 @@ module.exports = {
    userSchema,
    problemSetSchema,
    doubtSectionSchema,
+   leaderboardSchema,
 };

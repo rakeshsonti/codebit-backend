@@ -7,6 +7,7 @@ const {
    userSchema,
    problemSetSchema,
    doubtSectionSchema,
+   leaderboardSchema,
 } = schemas;
 const mongoose = require("mongoose");
 //connection to mongodb
@@ -16,7 +17,7 @@ const userModel = db.model("user", userSchema);
 const problemSetModel = db.model("problemSet", problemSetSchema);
 //------------doubt section model
 const doubtSectionModel = db.model("doubtSection", doubtSectionSchema);
-
+const leaderboardModel = db.model("leaderBoard", leaderboardSchema);
 //--------------------------------
 const myschema = new mongoose.Schema({
    name: String,
@@ -83,4 +84,5 @@ module.exports = {
    mymodel,
    problemSetModel,
    doubtSectionModel,
+   leaderboardModel,
 };
