@@ -1,4 +1,9 @@
-n = int(input())
-arr = input()   # takes the whole line of n numbers
-l = list(map(int,arr.split(' ')))
-print (l)
+def reverse(s): 
+  str = "" 
+  for i in s: 
+    str = i + str
+  return str
+
+str=input();
+result=reverse(str);
+print(result);
