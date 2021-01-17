@@ -32,7 +32,7 @@ app.use(
    })
 );
 //--------------------leaderboard-----------------------
-app.get("/getProfile", async (req, res) => {
+app.get("/getProfile", AuthMiddleware, async (req, res) => {
    const userId = req.session.userId;
    const profile = await leaderboardModel.find({
       userId,
@@ -41,7 +41,7 @@ app.get("/getProfile", async (req, res) => {
 });
 
 //-----------------------------------
-app.post("/getLeaderboard", async (req, res) => {
+app.post("/getLeaderboard", AuthMiddleware, async (req, res) => {
    const { limit, skip } = req.body;
    const allUserData = await leaderboardModel
       .find()
@@ -61,13 +61,13 @@ app.get("/userinformation", AuthMiddleware, async (req, res) => {
    res.send({ name: user.name });
 });
 //---------------------------------------------
-app.post("/deleteDoubt", async (req, res) => {
+app.post("/deleteDoubt", AuthMiddleware, async (req, res) => {
    const { doubtId } = req.body;
    await doubtSectionModel.findByIdAndDelete({ _id: doubtId });
    res.send({ success: "doubt deleted successfully" });
 });
 //----------------------------------------------
-app.post("/deleteComment", async (req, res) => {
+app.post("/deleteComment", AuthMiddleware, async (req, res) => {
    const { commentId, commentValue, commentedBy } = req.body;
    const record = await doubtSectionModel.findById({ _id: commentId });
    const idx = record.details.comments.findIndex((value) => {
@@ -82,7 +82,7 @@ app.post("/deleteComment", async (req, res) => {
    res.send({ success: "comment deleted successfully" });
 });
 //----------------------------------------------
-app.post("/addComment", async (req, res) => {
+app.post("/addComment", AuthMiddleware, async (req, res) => {
    const { commentId, commentValue } = req.body;
    const user = await userModel.findById(req.session.userId);
    const record = await doubtSectionModel.findById({ _id: commentId });
@@ -94,7 +94,7 @@ app.post("/addComment", async (req, res) => {
    res.send({ success: "record is saved" });
 });
 //---------------doubt section initial load data------------
-app.get("/doubtSectionLoad", async (req, res) => {
+app.get("/doubtSectionLoad", AuthMiddleware, async (req, res) => {
    const allDoubts = await doubtSectionModel.find().sort({
       "details.askedTime": "desc",
    });
@@ -102,7 +102,7 @@ app.get("/doubtSectionLoad", async (req, res) => {
 });
 
 //--------doubt section--------------------
-app.post("/doubtSection", async (req, res) => {
+app.post("/doubtSection", AuthMiddleware, async (req, res) => {
    const { problemHead, problemDescription } = req.body;
    // doubtSectionModel
    if (
@@ -213,7 +213,7 @@ app.get("/logout", async (req, res) => {
 });
 
 //------------------isDone endpoint--------------------------------
-app.post("/isdone", async (req, res) => {
+app.post("/isdone", AuthMiddleware, async (req, res) => {
    const { key, isDone } = req.body;
    await userCodeModel.findOneAndUpdate(
       {
@@ -466,7 +466,7 @@ app.post("/getInitialCode/:key", async (req, res) => {
       res.send(problem);
    }
 });
-app.post("/saveProblem", async (req, res) => {
+app.post("/saveProblem", AuthMiddleware, async (req, res) => {
    try {
       const {
          topicTag,
