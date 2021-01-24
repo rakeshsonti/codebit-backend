@@ -22,7 +22,7 @@ _bcrypt,compile-run,compile-run,cors,express,express-session,mongoose and nodemo
 
 1. **/getLeaderboard:**
    This endpoint is used for initially fetching data on loading of the leaderboard page.
-2. **/getProfile**
+2. **/getProfile:**
    This endpoint for getting information about the user.
 3. **/deleteDoubt:**
    This endpoint for deleting doubt from doubt section.
