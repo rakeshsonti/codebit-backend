@@ -41,7 +41,7 @@ app.get("/getProfile", AuthMiddleware, async (req, res) => {
 });
 
 //-----------------------------------
-app.post("/getLeaderboard", AuthMiddleware, async (req, res) => {
+app.post("/getLeaderboard/", async (req, res) => {
    const { limit, skip } = req.body;
    const allUserData = await leaderboardModel
       .find()
@@ -136,7 +136,6 @@ const isNullOrUndefined = (val) => val === null || val === undefined;
 const SALT = 10;
 app.post("/signup", async (req, res) => {
    const { name, email, password } = req.body;
-   // const existingUser=userModel.findOne({firstName:firstName});
    //when key and value both are same than there is a sortcut in js
    const existingUser = await userModel.findOne({ email });
    if (isNullOrUndefined(existingUser)) {
@@ -172,7 +171,6 @@ app.post("/signup", async (req, res) => {
                   username: email,
                });
                await obj.save();
-
                res.status(201).send({
                   success: `sign up`,
                });
@@ -185,6 +183,7 @@ app.post("/signup", async (req, res) => {
       });
    }
 });
+
 app.post("/login", async (req, res) => {
    const { email, password } = req.body;
    const existingUser = await userModel.findOne({ email });
@@ -198,7 +197,9 @@ app.post("/login", async (req, res) => {
             success: `log in `,
          });
       } else {
-         res.status(401).send({ err: `username/password don't match` });
+         res.status(401).send({
+            err: `username/password don't match`,
+         });
       }
    }
 });
@@ -674,5 +675,5 @@ app.post("/runCode", async (req, res) => {
    }
 });
 app.listen(port, () => {
-   console.log(`server is listening on port${port} `);
+   console.log(`server is listening on port ${port} `);
 });
