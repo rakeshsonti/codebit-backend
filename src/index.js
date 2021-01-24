@@ -17,7 +17,7 @@ const {
    leaderboardModel,
 } = middlewares;
 app.use(express.json());
-//cors not needed for same host (backend and frontend)
+//cors not needed for same host (backend and frontend) but if port is different then needed
 app.use(
    cors({
       credentials: true,
