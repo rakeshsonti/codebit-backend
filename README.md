@@ -63,7 +63,7 @@ _bcrypt,compile-run,compile-run,cors,express,express-session,mongoose and nodemo
 
 ## Run Project on local:
 
-1. Open vscode or any IDE new window , open terminal and **clone git repo**.
+1. Open vscode or any IDE new window , open terminal and **clone git repository**.
 2. “git clone **https://github.com/rambhajansonti/codebit-backend**”.
 3. Open folder as **“codebit-backend”** or **“cd code-bit”**.
 4. _“npm install”._
